@@ -1,0 +1,16 @@
+<!--
+ * ***** BEGIN LICENSE BLOCK *****
+ *
+ * Zimbra Collaboration Suite, Network Edition.
+ * Copyright (C) 2012 VMware, Inc.  All Rights Reserved.
+ *
+ * ***** END LICENSE BLOCK *****
+-->
+<zimlet name="com_zimbra_viewmail"
+        version="8.0.0"
+        label="${msg.label}"
+        description="${msg.description}"
+        extension="true">
+    <include>com_zimbra_viewmail.js</include>
+    <disableUIUndeploy>FALSE</disableUIUndeploy>
+</zimlet>
