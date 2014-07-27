@@ -22,24 +22,12 @@
 if(ZaSettings && ZaSettings.EnabledZimlet["com_zimbra_viewmail"]){
 ZaAccountViewMail = function () {}
 
-/*ZaAccountViewMail.initExtraToolbarButton = function () {
-
-    this._toolbarOperations[ZaOperation.VIEW_MAIL] = new ZaOperation(ZaOperation.VIEW_MAIL,
-        com_zimbra_viewmail.ACTBB_ViewMail, com_zimbra_viewmail.ACTBB_ViewMail_tt, "ReadMailbox", "ReadMailbox",
-        new AjxListener(this, ZaAccountViewMail._viewMailListener));
-
-    if (!this._toolbarOrder) {
-        this._toolbarOrder == [];
-    }
-    this._toolbarOrder.push (ZaOperation.VIEW_MAIL)  ;
-}
-*/
-
-
 ZaAccountViewMail.initExtraPopupButton = function () {
-    this._popupOperations[ZaOperation.VIEW_MAIL] = new ZaOperation(ZaOperation.VIEW_MAIL,
-        com_zimbra_viewmail.ACTBB_ViewMail, com_zimbra_viewmail.ACTBB_ViewMail_tt, "ReadMailbox", "ReadMailbox",
-        new AjxListener(this, ZaAccountViewMail._viewMailListener));
+	if(ZaZimbraAdmin.haveAnyTargetRight(ZaItem.ACCOUNT,ZaAccount.VIEW_MAIL_RIGHT) || ZaZimbraAdmin.haveAnyTargetRight(ZaItem.RESOURCE,ZaResource.VIEW_RESOURCE_MAIL_RIGHT)) {
+	    this._popupOperations[ZaOperation.VIEW_MAIL] = new ZaOperation(ZaOperation.VIEW_MAIL,
+	        com_zimbra_viewmail.ACTBB_ViewMail, com_zimbra_viewmail.ACTBB_ViewMail_tt, "ReadMailbox", "ReadMailbox",
+	        new AjxListener(this, ZaAccountViewMail._viewMailListener));
+	}
 }
 
 if (ZaController.initPopupMenuMethods["ZaAccountListController"]) {
@@ -105,22 +93,7 @@ function () {
     if (cnt == 1) {
         if (item) {
 
-            if ((item.type == ZaItem.ALIAS) && (item.attrs[ZaAlias.A_targetType] == ZaItem.DL)) {
-                if(!item.targetObj)
-                    item.targetObj = item.getAliasTargetObj();
-
-                var enable = (item.targetObj.attrs[ZaDistributionList.A_mailStatus] == "enabled");
-                if(this._popupOperations[ZaOperation.VIEW_MAIL])
-                    this._popupOperations[ZaOperation.VIEW_MAIL].enabled = enable;
-
-            }
-            else if (item.type == ZaItem.DL) {
-                var enable = (item.attrs[ZaDistributionList.A_mailStatus] == "enabled");
-                if(this._popupOperations[ZaOperation.VIEW_MAIL])
-                    this._popupOperations[ZaOperation.VIEW_MAIL].enabled = enable;
-
-            }
-				else if (item.type == ZaItem.ACCOUNT) {
+            if (item.type == ZaItem.ACCOUNT) {
 				var enable = false;
 				if(ZaZimbraAdmin.currentAdminAccount.attrs[ZaAccount.A_zimbraIsAdminAccount] == 'TRUE') {
 					enable = true;
@@ -180,7 +153,7 @@ function () {
 
 					}
                 }
-            } else if(item.type == ZaItem.DOMAIN || item.type == ZaItem.COS){
+            } else {
                if(this._popupOperations[ZaOperation.VIEW_MAIL]) {
 					this._popupOperations[ZaOperation.VIEW_MAIL].enabled = false;
                }
