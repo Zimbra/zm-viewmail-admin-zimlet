@@ -3,7 +3,7 @@
     <import file="../zm-zcs/ant-global.xml" />
 
     <!-- archiving zimlet -->
-    <property name="zimlet.file" value="com_zimbra_viewmail.zip" />
+    <property name="zimlet.file" value="com_zimbra_viewmail" />
     <property name="viewMailZimletDir.js.dir" location="js" />
 
     <target name="build-init">
@@ -11,7 +11,7 @@
     </target>
 
     <target name="package-zimlet" depends='build-init' description="put zimlet files into zip archive for deployment">
-        <zip destfile="${build.zimlet.dir}/${zimlet.file}" update="true">
+        <zip destfile="${build.zimlet.dir}/${zimlet.file}.zip" update="true">
             <fileset dir="${viewMailZimletDir.js.dir}" includes="*"/>
         </zip>
     </target>
@@ -25,7 +25,7 @@
         <java classname="com.zimbra.cs.zimlet.ZimletUtil" fork="true" classpathref="class.path" failonerror="true">
             <arg line="-q" />
             <arg line="deploy" />
-            <arg file="${build.zimlet.dir}/${zimlet.file}" />
+            <arg file="${build.zimlet.dir}/${zimlet.file}.zip" />
         </java>
     </target>
 
