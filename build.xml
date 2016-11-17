@@ -1,0 +1,39 @@
+<project name="zm-viewmail-admin-zimlet" default="deploy">
+
+    <import file="../zm-zcs/ant-global.xml" />
+
+    <!-- archiving zimlet -->
+    <property name="zimlet.file" value="com_zimbra_viewmail" />
+    <property name="viewMailZimletDir.js.dir" location="js" />
+
+    <target name="build-init">
+        <mkdir dir="${build.zimlet.dir}" />
+    </target>
+
+    <target name="package-zimlet" depends='build-init' description="put zimlet files into zip archive for deployment">
+        <zip destfile="${build.zimlet.dir}/${zimlet.file}.zip" update="true">
+            <fileset dir="${viewMailZimletDir.js.dir}" includes="*"/>
+        </zip>
+    </target>
+
+    <target name="jar"/>
+
+    <target name="deploy" depends="deploy-zimlet" description="Deploys the extension"/>
+
+    <target name="deploy-zimlet" depends='package-zimlet,resolve' description="install UI files, deploy zimlet to LDAP">
+        <echo>Deploying zimlet: com_zimbra_viewmail</echo>
+        <java classname="com.zimbra.cs.zimlet.ZimletUtil" fork="true" classpathref="class.path" failonerror="true">
+            <arg line="-q" />
+            <arg line="deploy" />
+            <arg file="${build.zimlet.dir}/${zimlet.file}.zip" />
+        </java>
+    </target>
+
+    <!-- undeploying zimlet -->
+    <target name="undeploy-zimlet"  depends="resolve"  description="undeploy zimlet">
+        <echo>Undeploying zimlet: com_zimbra_viewmail.zip</echo>
+        <java classname="com.zimbra.cs.zimlet.ZimletUtil" fork="true" classpathref="class.path" failonerror="true">
+            <arg line="undeploy ${zimlet.file}" />
+        </java>
+    </target>
+</project>
