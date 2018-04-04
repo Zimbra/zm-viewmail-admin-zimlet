@@ -7,7 +7,7 @@
     <dependencies>
         <dependency org="commons-codec" name="commons-codec" rev="1.7" />
         <dependency org="commons-httpclient" name="commons-httpclient" rev="3.1" />
-        <dependency org="com.google.guava" name="guava" rev="13.0.1" />
+        <dependency org="com.google.guava" name="guava" rev="23.0" />
         <dependency org="javax.mail" name="mail" rev="1.4.5" />
         <dependency org="dom4j" name="dom4j" rev="1.5.2" />
         <dependency org="log4j" name="log4j" rev="1.2.16" />
