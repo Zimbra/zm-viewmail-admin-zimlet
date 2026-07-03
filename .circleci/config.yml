@@ -1,0 +1,161 @@
+version: 2.1
+
+############################################################################
+
+references:
+   checkout_job_steps: &checkout_job_steps
+      steps:
+         - checkout
+         - run:
+            name: Cloning dependency repositories.
+            command: |
+               git clone -b develop --single-branch https://github.com/Zimbra/zm-zcs.git ~/zm-zcs
+               git clone -b master --single-branch https://github.com/Zimbra/zimbra-package-stub.git ~/zimbra-package-stub
+               git clone -b poc --single-branch https://$GITHUB_ACCESS_TOKEN@github.com/Zimbra/zm-nexus.git ~/zm-nexus
+               mkdir -p ~/.zcs-deps
+
+         - persist_to_workspace:
+            root: ..
+            paths:
+               - zm-viewmail-admin-zimlet
+               - zm-zcs
+               - zimbra-package-stub
+               - zm-nexus
+               - .zcs-deps
+
+############################################################################
+
+   build_job_steps: &build_job_steps
+      steps:
+         - attach_workspace:
+            at: ..
+
+         - run:
+            name: Packaging zimlet into ZIP
+            command: |
+              mkdir -p /home/build/.ivy2/cache
+              sudo apt-get update && sudo apt-get install ant-contrib -y
+              cd ../zm-viewmail-admin-zimlet
+              
+              JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+              export JAVA_HOME
+
+              ant package-zimlet
+
+              ZIP_PATH="build/zimlet/com_zimbra_viewmail.zip"
+
+              if [ ! -f "$ZIP_PATH" ]; then
+                echo "ERROR: expected zip not found at $ZIP_PATH"
+                exit 1
+              fi
+
+              echo "--- ZIP produced ---"
+              ls -la "$ZIP_PATH"
+
+              # Version is declared inside the zimlet's own XML descriptor...
+              ZIMLET_VERSION=$(grep -o 'version="[^"]*"' js/com_zimbra_viewmail.xml | head -n1 | cut -d'"' -f2)
+
+              if [ -z "$ZIMLET_VERSION" ]; then
+                echo "ERROR: could not determine zimlet version from com_zimbra_viewmail.xml"
+                exit 1
+              fi
+
+              echo "Zimlet version: $ZIMLET_VERSION"
+              echo "$ZIMLET_VERSION" > build/zimlet/VERSION
+
+         - persist_to_workspace:
+            root: ..
+            paths:
+               - zm-viewmail-admin-zimlet/build
+               - .zcs-deps
+
+############################################################################
+
+   publish_job_steps: &publish_job_steps
+      steps:
+         - attach_workspace:
+            at: ..
+
+         - run:
+            name: Publishing zimlet ZIP to Nexus
+            command: |
+               cd ../zm-viewmail-admin-zimlet
+
+               sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y curl
+
+               ZIMLET_VERSION=$(cat build/zimlet/VERSION)
+               echo "Publishing version: $ZIMLET_VERSION"
+
+               ZIP_COUNT=$(find build/zimlet -maxdepth 1 -type f -name "*.zip" | wc -l)
+               if [ "$ZIP_COUNT" -eq 0 ]; then
+                 echo "No ZIP found under build/zimlet!"
+                 exit 1
+               fi
+
+               bash ~/zm-nexus/scripts/publish-zip-to-nexus.sh \
+                 "build/zimlet" \
+                 "zm-viewmail-admin-zimlet/${ZIMLET_VERSION}"
+
+               echo "ZIP publish completed"
+
+############################################################################
+
+jobs:
+   checkout:
+      working_directory: ~/zm-viewmail-admin-zimlet
+      shell: /bin/bash -eo pipefail
+      docker:
+      - image: $DOCKER_REGISTRY/zm-base-os:devcore-ubuntu-22.04
+        auth:
+          username: $DOCKER_USER
+          password: $DOCKER_PASS
+      resource_class: small
+      <<: *checkout_job_steps
+
+   build:
+      working_directory: ~/zm-viewmail-admin-zimlet
+      shell: /bin/bash -eo pipefail
+      docker:
+      - image: $DOCKER_REGISTRY/zm-base-os:devcore-ubuntu-22.04
+        auth:
+          username: $DOCKER_USER
+          password: $DOCKER_PASS
+      resource_class: small
+      <<: *build_job_steps
+
+   publish:
+      working_directory: ~/zm-viewmail-admin-zimlet
+      shell: /bin/bash -eo pipefail
+      circleci_ip_ranges: true
+      docker:
+      - image: $DOCKER_REGISTRY/zm-base-os:devcore-ubuntu-22.04
+        auth:
+          username: $DOCKER_USER
+          password: $DOCKER_PASS
+      resource_class: small
+      <<: *publish_job_steps
+
+############################################################################
+
+workflows:
+   version: 2
+   main:
+      jobs:
+         - checkout:
+            context:
+               - docker-dev-registry
+         - build:
+            context:
+               - docker-dev-registry
+            requires:
+               - checkout
+         - publish:
+            context:
+               - docker-dev-registry
+               - nexus-dev-artifactory
+            requires:
+               - build
+            filters:
+               branches:
+                 only:
+                   - ZCICD-48
