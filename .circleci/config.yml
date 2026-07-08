@@ -11,7 +11,7 @@ references:
             command: |
                git clone -b develop --single-branch https://github.com/Zimbra/zm-zcs.git ~/zm-zcs
                git clone -b master --single-branch https://github.com/Zimbra/zimbra-package-stub.git ~/zimbra-package-stub
-               git clone -b poc --single-branch https://$GITHUB_ACCESS_TOKEN@github.com/Zimbra/zm-nexus.git ~/zm-nexus
+               git clone -b master --single-branch https://$GITHUB_ACCESS_TOKEN@github.com/Zimbra/zm-nexus.git ~/zm-nexus
                mkdir -p ~/.zcs-deps
 
          - persist_to_workspace:
@@ -49,7 +49,7 @@ references:
                 exit 1
               fi
 
-              echo "--- ZIP produced ---"
+              echo "--- ZIP created ---"
               ls -la "$ZIP_PATH"
 
               # Version is declared inside the zimlet's own XML descriptor...
@@ -158,4 +158,4 @@ workflows:
             filters:
                branches:
                  only:
-                   - ZCICD-48
+                   - develop
